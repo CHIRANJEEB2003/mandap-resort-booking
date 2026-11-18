@@ -1,5 +1,6 @@
 const { prisma } = require('../utils/prisma');
 const { createError } = require('../middleware/errorHandler');
+const { toDateOnly } = require('../utils/date');
 
 function computeNights(checkIn, checkOut) {
   const a = new Date(checkIn);
@@ -50,8 +51,8 @@ exports.createRoomBooking = async (req, res) => {
     data: {
       roomId,
       customerId: customer.id,
-      checkIn: new Date(checkIn),
-      checkOut: new Date(checkOut),
+      checkIn: toDateOnly(checkIn),
+      checkOut: toDateOnly(checkOut),
       nights,
       roomCount: Number(roomCount),
       guestCount: Number(guestCount),

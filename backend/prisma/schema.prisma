@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -84,15 +84,15 @@ enum PricingType {
 // ─── IDENTITY ────────────────────────────────────────────────────────────────
 
 model User {
-  id              String     @id @default(uuid())
-  email           String?    @unique
-  phone           String     @unique
-  passwordHash    String
-  role            UserRole
-  status          UserStatus @default(ACTIVE)
-  fcmToken        String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id           String     @id @default(uuid()) @map("_id")
+  email        String?
+  phone        String     @unique
+  passwordHash String
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+  fcmToken     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   customerProfile CustomerProfile?
   ownerProfile    OwnerProfile?
@@ -100,12 +100,11 @@ model User {
   notifications   Notification[]
   auditLogs       AuditLog[]
 
-  @@index([phone])
   @@index([email])
 }
 
 model CustomerProfile {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @map("_id")
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
   fullName    String
@@ -118,46 +117,46 @@ model CustomerProfile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  bookings    Booking[]
-  reviews     Review[]
+  bookings     Booking[]
+  reviews      Review[]
   roomBookings RoomBooking[]
 }
 
 model OwnerProfile {
-  id               String      @id @default(uuid())
-  userId           String      @unique
-  user             User        @relation(fields: [userId], references: [id])
-  businessName     String
-  fullName         String
-  avatarUrl        String?
-  address          String
-  ownerType        String      @default("GENERAL")
-  gstNumber        String?
-  panNumber        String?
-  bankAccount      Json?
+  id                 String      @id @default(uuid()) @map("_id")
+  userId             String      @unique
+  user               User        @relation(fields: [userId], references: [id])
+  businessName       String
+  fullName           String
+  avatarUrl          String?
+  address            String
+  ownerType          String      @default("GENERAL")
+  gstNumber          String?
+  panNumber          String?
+  bankAccount        Json?
   verificationStatus OwnerStatus @default(PENDING)
-  verifiedAt       DateTime?
-  verifiedById     String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  verifiedAt         DateTime?
+  verifiedById       String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  documents        OwnerDocument[]
-  properties       Property[]
-  staff            StaffMember[]
+  documents  OwnerDocument[]
+  properties Property[]
+  staff      StaffMember[]
 }
 
 model OwnerDocument {
-  id          String   @id @default(uuid())
-  ownerId     String
-  owner       OwnerProfile @relation(fields: [ownerId], references: [id])
-  docType     String
-  fileUrl     String
-  verified    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String       @id @default(uuid()) @map("_id")
+  ownerId   String
+  owner     OwnerProfile @relation(fields: [ownerId], references: [id])
+  docType   String
+  fileUrl   String
+  verified  Boolean      @default(false)
+  createdAt DateTime     @default(now())
 }
 
 model AdminProfile {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @map("_id")
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
   fullName    String
@@ -169,39 +168,39 @@ model AdminProfile {
 // ─── LOCATION ────────────────────────────────────────────────────────────────
 
 model State {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  code      String   @unique
-  nodes     LocationNode[]
+  id    String         @id @default(uuid()) @map("_id")
+  name  String         @unique
+  code  String         @unique
+  nodes LocationNode[]
 }
 
 model LocationNode {
-  id        Int          @id @default(autoincrement())
-  stateId   Int
-  state     State        @relation(fields: [stateId], references: [id])
-  parentId  Int?
-  parent    LocationNode? @relation("NodeTree", fields: [parentId], references: [id])
+  id        String         @id @default(uuid()) @map("_id")
+  stateId   String
+  state     State          @relation(fields: [stateId], references: [id])
+  parentId  String?
+  parent    LocationNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children  LocationNode[] @relation("NodeTree")
   level     Int
   name      String
   slug      String
-  createdAt DateTime     @default(now())
+  createdAt DateTime       @default(now())
 
-  localities  Locality[]
-  properties  Property[]
+  localities Locality[]
+  properties Property[]
 
   @@index([stateId, level])
   @@index([parentId])
 }
 
 model Locality {
-  id         Int          @id @default(autoincrement())
-  nodeId     Int
-  node       LocationNode @relation(fields: [nodeId], references: [id])
-  name       String
-  pinCode    String
-  lat        Float?
-  lng        Float?
+  id      String       @id @default(uuid()) @map("_id")
+  nodeId  String
+  node    LocationNode @relation(fields: [nodeId], references: [id])
+  name    String
+  pinCode String
+  lat     Float?
+  lng     Float?
 
   properties Property[]
 
@@ -211,12 +210,12 @@ model Locality {
 // ─── PROPERTY ────────────────────────────────────────────────────────────────
 
 model Property {
-  id              String         @id @default(uuid())
+  id              String         @id @default(uuid()) @map("_id")
   ownerId         String
   owner           OwnerProfile   @relation(fields: [ownerId], references: [id])
-  locationNodeId  Int
+  locationNodeId  String
   locationNode    LocationNode   @relation(fields: [locationNodeId], references: [id])
-  localityId      Int?
+  localityId      String?
   locality        Locality?      @relation(fields: [localityId], references: [id])
   name            String
   slug            String         @unique
@@ -241,18 +240,18 @@ model Property {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  halls              Hall[]
-  media              PropertyMedia[]
-  pricingRules       PricingRule[]
-  resources          PropertyResource[]
-  bookings           Booking[]
-  reviews            Review[]
-  amenities          PropertyAmenity[]
-  eventTypes         PropertyEventType[]
-  cateringPackages   CateringPackage[]
-  decorationPackages DecorationPackage[]
-  rooms              Room[]
-  weddingPackages    WeddingPackage[]
+  halls               Hall[]
+  media               PropertyMedia[]
+  pricingRules        PricingRule[]
+  resources           PropertyResource[]
+  bookings            Booking[]
+  reviews             Review[]
+  amenities           PropertyAmenity[]
+  eventTypes          PropertyEventType[]
+  cateringPackages    CateringPackage[]
+  decorationPackages  DecorationPackage[]
+  rooms               Room[]
+  weddingPackages     WeddingPackage[]
   photographyServices PhotographyService[]
 
   @@index([locationNodeId])
@@ -262,112 +261,112 @@ model Property {
 }
 
 model Hall {
-  id            String   @id @default(uuid())
-  propertyId    String
-  property      Property @relation(fields: [propertyId], references: [id])
-  name          String
-  capacity      Int
-  area          Float?
-  hasAC         Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  description   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid()) @map("_id")
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  name        String
+  capacity    Int
+  area        Float?
+  hasAC       Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  bookings      Booking[]
+  bookings Booking[]
 }
 
 model PropertyMedia {
-  id          String    @id @default(uuid())
-  propertyId  String
-  property    Property  @relation(fields: [propertyId], references: [id])
-  mediaType   MediaType
-  url         String
-  thumbUrl    String?
-  isCover     Boolean   @default(false)
-  sortOrder   Int       @default(0)
-  category    String    @default("GENERAL")
-  altText     String?
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(uuid()) @map("_id")
+  propertyId String
+  property   Property  @relation(fields: [propertyId], references: [id])
+  mediaType  MediaType
+  url        String
+  thumbUrl   String?
+  isCover    Boolean   @default(false)
+  sortOrder  Int       @default(0)
+  category   String    @default("GENERAL")
+  altText    String?
+  createdAt  DateTime  @default(now())
 
   @@index([propertyId])
   @@index([propertyId, category])
 }
 
 model PricingRule {
-  id            String      @id @default(uuid())
-  propertyId    String
-  property      Property    @relation(fields: [propertyId], references: [id])
-  hallId        String?
-  pricingType   PricingType
-  basePrice     Decimal
-  weekendPrice  Decimal?
-  seasonalPrice Decimal?
-  advancePercent Int        @default(30)
-  isActive      Boolean     @default(true)
-  conditions    Json?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String      @id @default(uuid()) @map("_id")
+  propertyId     String
+  property       Property    @relation(fields: [propertyId], references: [id])
+  hallId         String?
+  pricingType    PricingType
+  basePrice      Float
+  weekendPrice   Float?
+  seasonalPrice  Float?
+  advancePercent Int         @default(30)
+  isActive       Boolean     @default(true)
+  conditions     Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model PropertyAmenity {
-  id          String   @id @default(uuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id])
-  name        String
-  icon        String?
+  id         String   @id @default(uuid()) @map("_id")
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  name       String
+  icon       String?
 }
 
 model PropertyEventType {
-  id          String   @id @default(uuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id])
-  eventType   String
+  id         String   @id @default(uuid()) @map("_id")
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  eventType  String
 }
 
 // ─── RESOURCES ────────────────────────────────────────────────────────────────
 
 model ResourceType {
-  id          Int              @id @default(autoincrement())
-  name        String
-  category    ResourceCategory
-  isSystem    Boolean          @default(false)
+  id       String           @id @default(uuid()) @map("_id")
+  name     String
+  category ResourceCategory
+  isSystem Boolean          @default(false)
 
   propertyResources PropertyResource[]
 }
 
 model PropertyResource {
-  id              String       @id @default(uuid())
-  propertyId      String
-  property        Property     @relation(fields: [propertyId], references: [id])
-  resourceTypeId  Int
-  resourceType    ResourceType @relation(fields: [resourceTypeId], references: [id])
-  totalQty        Int
-  maintenanceQty  Int          @default(0)
-  pricePerUnit    Decimal?
-  isActive        Boolean      @default(true)
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(uuid()) @map("_id")
+  propertyId     String
+  property       Property     @relation(fields: [propertyId], references: [id])
+  resourceTypeId String
+  resourceType   ResourceType @relation(fields: [resourceTypeId], references: [id])
+  totalQty       Int
+  maintenanceQty Int          @default(0)
+  pricePerUnit   Float?
+  isActive       Boolean      @default(true)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  allocations     ResourceAllocation[]
+  allocations ResourceAllocation[]
 }
 
 model BookingHold {
-  id          String   @id @default(uuid())
-  propertyId  String
-  hallId      String?
-  eventDate   DateTime @db.Date
-  expiresAt   DateTime
-  sessionId   String
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid()) @map("_id")
+  propertyId String
+  hallId     String?
+  eventDate  DateTime
+  expiresAt  DateTime
+  sessionId  String
+  createdAt  DateTime @default(now())
 
   @@index([propertyId, eventDate])
   @@index([expiresAt])
 }
 
 model ResourceAllocation {
-  id                 String           @id @default(uuid())
+  id                 String           @id @default(uuid()) @map("_id")
   bookingId          String
   booking            Booking          @relation(fields: [bookingId], references: [id])
   propertyResourceId String
@@ -380,39 +379,39 @@ model ResourceAllocation {
 // ─── BOOKINGS & FINANCE ───────────────────────────────────────────────────────
 
 model Booking {
-  id               String        @id @default(uuid())
-  propertyId       String
-  property         Property      @relation(fields: [propertyId], references: [id])
-  hallId           String?
-  hall             Hall?         @relation(fields: [hallId], references: [id])
-  customerId       String
-  customer         CustomerProfile @relation(fields: [customerId], references: [id])
-  eventDate        DateTime      @db.Date
-  startTime        DateTime?
-  endTime          DateTime?
-  eventType        String
-  guestCount       Int
-  status           BookingStatus @default(ENQUIRY)
-  baseAmount       Decimal
-  servicesAmount   Decimal       @default(0)
-  taxAmount        Decimal       @default(0)
-  totalAmount      Decimal
-  advanceAmount    Decimal
-  notes            String?
-  ownerNotes       String?
-  cancelledAt      DateTime?
-  cancelReason     String?
-  refundAmount     Decimal?
-  ownerRetentionAmount Decimal?
-  confirmedAt      DateTime?
-  hiddenFromHistory Boolean      @default(false)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                   String          @id @default(uuid()) @map("_id")
+  propertyId           String
+  property             Property        @relation(fields: [propertyId], references: [id])
+  hallId               String?
+  hall                 Hall?           @relation(fields: [hallId], references: [id])
+  customerId           String
+  customer             CustomerProfile @relation(fields: [customerId], references: [id])
+  eventDate            DateTime
+  startTime            DateTime?
+  endTime              DateTime?
+  eventType            String
+  guestCount           Int
+  status               BookingStatus   @default(ENQUIRY)
+  baseAmount           Float
+  servicesAmount       Float           @default(0)
+  taxAmount            Float           @default(0)
+  totalAmount          Float
+  advanceAmount        Float
+  notes                String?
+  ownerNotes           String?
+  cancelledAt          DateTime?
+  cancelReason         String?
+  refundAmount         Float?
+  ownerRetentionAmount Float?
+  confirmedAt          DateTime?
+  hiddenFromHistory    Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
-  services         BookingService[]
-  payments         Payment[]
-  allocations      ResourceAllocation[]
-  review           Review?
+  services             BookingService[]
+  payments             Payment[]
+  allocations          ResourceAllocation[]
+  review               Review?
   cateringSelections   BookingCateringSelection[]
   decorationSelections BookingDecorationSelection[]
 
@@ -422,17 +421,17 @@ model Booking {
 }
 
 model BookingService {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid()) @map("_id")
   bookingId   String
-  booking     Booking  @relation(fields: [bookingId], references: [id])
+  booking     Booking @relation(fields: [bookingId], references: [id])
   serviceName String
-  quantity    Int      @default(1)
-  unitPrice   Decimal
-  totalPrice  Decimal
+  quantity    Int     @default(1)
+  unitPrice   Float
+  totalPrice  Float
 }
 
 model CancellationPolicy {
-  id              String   @id @default(uuid())
+  id              String   @id @default(uuid()) @map("_id")
   propertyId      String   @unique
   daysBeforeEvent Int
   refundPercent   Int
@@ -441,50 +440,50 @@ model CancellationPolicy {
 }
 
 model Payment {
-  id              String        @id @default(uuid())
-  bookingId       String
-  booking         Booking       @relation(fields: [bookingId], references: [id])
-  razorpayOrderId String?
+  id                String        @id @default(uuid()) @map("_id")
+  bookingId         String
+  booking           Booking       @relation(fields: [bookingId], references: [id])
+  razorpayOrderId   String?
   razorpayPaymentId String?
-  amount          Decimal
-  currency        String        @default("INR")
-  status          PaymentStatus @default(PENDING)
-  isAdvance       Boolean       @default(false)
-  receipt         String?
-  paidAt          DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  amount            Float
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  isAdvance         Boolean       @default(false)
+  receipt           String?
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  commission      Commission?
+  commission Commission?
 
   @@index([bookingId])
 }
 
 model Commission {
-  id          String   @id @default(uuid())
-  paymentId   String   @unique
-  payment     Payment  @relation(fields: [paymentId], references: [id])
-  ratePercent Decimal
-  amount      Decimal
+  id          String    @id @default(uuid()) @map("_id")
+  paymentId   String    @unique
+  payment     Payment   @relation(fields: [paymentId], references: [id])
+  ratePercent Float
+  amount      Float
   settledAt   DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 }
 
 // ─── PACKAGES ────────────────────────────────────────────────────────────────
 
 model CateringPackage {
-  id          String   @id @default(uuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id])
-  name        String
-  description String?
-  isVeg       Boolean  @default(true)
-  pricePerHead Decimal
-  minGuests   Int      @default(50)
-  items       Json?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid()) @map("_id")
+  propertyId   String
+  property     Property @relation(fields: [propertyId], references: [id])
+  name         String
+  description  String?
+  isVeg        Boolean  @default(true)
+  pricePerHead Float
+  minGuests    Int      @default(50)
+  items        Json?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   bookingSelections BookingCateringSelection[]
 
@@ -492,13 +491,13 @@ model CateringPackage {
 }
 
 model DecorationPackage {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @map("_id")
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id])
   name        String
   serviceType String   @default("GENERAL")
   description String?
-  price       Decimal
+  price       Float
   images      Json     @default("[]")
   imageUrl    String?
   isActive    Boolean  @default(true)
@@ -511,43 +510,43 @@ model DecorationPackage {
 }
 
 model BookingCateringSelection {
-  id          String          @id @default(uuid())
-  bookingId   String
-  booking     Booking         @relation(fields: [bookingId], references: [id])
-  packageId   String
-  package     CateringPackage @relation(fields: [packageId], references: [id])
-  guestCount  Int
-  totalPrice  Decimal
+  id         String          @id @default(uuid()) @map("_id")
+  bookingId  String
+  booking    Booking         @relation(fields: [bookingId], references: [id])
+  packageId  String
+  package    CateringPackage @relation(fields: [packageId], references: [id])
+  guestCount Int
+  totalPrice Float
 }
 
 model BookingDecorationSelection {
-  id          String            @id @default(uuid())
-  bookingId   String
-  booking     Booking           @relation(fields: [bookingId], references: [id])
-  packageId   String
-  package     DecorationPackage @relation(fields: [packageId], references: [id])
-  totalPrice  Decimal
+  id         String            @id @default(uuid()) @map("_id")
+  bookingId  String
+  booking    Booking           @relation(fields: [bookingId], references: [id])
+  packageId  String
+  package    DecorationPackage @relation(fields: [packageId], references: [id])
+  totalPrice Float
 }
 
 // ─── STAFF ────────────────────────────────────────────────────────────────────
 
 model StaffMember {
-  id          String       @id @default(uuid())
-  ownerId     String
-  owner       OwnerProfile @relation(fields: [ownerId], references: [id])
-  fullName    String
-  phone       String
-  role        String
-  isActive    Boolean      @default(true)
-  schedule    Json?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String       @id @default(uuid()) @map("_id")
+  ownerId   String
+  owner     OwnerProfile @relation(fields: [ownerId], references: [id])
+  fullName  String
+  phone     String
+  role      String
+  isActive  Boolean      @default(true)
+  schedule  Json?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
 // ─── REVIEWS ─────────────────────────────────────────────────────────────────
 
 model Review {
-  id          String          @id @default(uuid())
+  id          String          @id @default(uuid()) @map("_id")
   propertyId  String
   property    Property        @relation(fields: [propertyId], references: [id])
   customerId  String
@@ -565,7 +564,7 @@ model Review {
 // ─── PLATFORM ─────────────────────────────────────────────────────────────────
 
 model Notification {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @map("_id")
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   title       String
@@ -579,37 +578,35 @@ model Notification {
 }
 
 model AuditLog {
-  id          BigInt   @id @default(autoincrement())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  action      String
-  entity      String
-  entityId    String
-  before      Json?
-  after       Json?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid()) @map("_id")
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  before    Json?
+  after     Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
 
   @@index([entity, entityId])
   @@index([userId])
 }
 
 model PasswordResetToken {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid()) @map("_id")
   userId    String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
-
-  @@index([token])
+  createdAt DateTime  @default(now())
 }
 
 model PlatformConfig {
-  id          Int      @id @default(autoincrement())
-  key         String   @unique
-  value       Json
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid()) @map("_id")
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
 }
 
 // ─── ROOM BOOKING ────────────────────────────────────────────────────────────
@@ -628,13 +625,13 @@ enum RoomBookingStatus {
 }
 
 model Room {
-  id            String       @id @default(uuid())
+  id            String       @id @default(uuid()) @map("_id")
   propertyId    String
   property      Property     @relation(fields: [propertyId], references: [id])
   category      RoomCategory
   name          String
   description   String?
-  pricePerNight Decimal
+  pricePerNight Float
   totalRooms    Int
   maxGuests     Int          @default(2)
   facilities    Json?
@@ -642,14 +639,14 @@ model Room {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  media         RoomMedia[]
-  bookings      RoomBooking[]
+  media    RoomMedia[]
+  bookings RoomBooking[]
 
   @@index([propertyId])
 }
 
 model RoomMedia {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id])
   url       String
@@ -659,19 +656,19 @@ model RoomMedia {
 }
 
 model RoomBooking {
-  id            String            @id @default(uuid())
+  id            String            @id @default(uuid()) @map("_id")
   roomId        String
   room          Room              @relation(fields: [roomId], references: [id])
   customerId    String
   customer      CustomerProfile   @relation(fields: [customerId], references: [id])
-  checkIn       DateTime          @db.Date
-  checkOut      DateTime          @db.Date
+  checkIn       DateTime
+  checkOut      DateTime
   nights        Int
   roomCount     Int
   guestCount    Int
-  totalAmount   Decimal
-  taxAmount     Decimal           @default(0)
-  advanceAmount Decimal
+  totalAmount   Float
+  taxAmount     Float             @default(0)
+  advanceAmount Float
   status        RoomBookingStatus @default(PENDING)
   notes         String?
   cancelledAt   DateTime?
@@ -680,17 +677,17 @@ model RoomBooking {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  payments      RoomBookingPayment[]
+  payments RoomBookingPayment[]
 
   @@index([roomId, checkIn, checkOut])
   @@index([customerId])
 }
 
 model RoomBookingPayment {
-  id            String        @id @default(uuid())
+  id            String        @id @default(uuid()) @map("_id")
   roomBookingId String
   roomBooking   RoomBooking   @relation(fields: [roomBookingId], references: [id])
-  amount        Decimal
+  amount        Float
   status        PaymentStatus @default(PENDING)
   isAdvance     Boolean       @default(false)
   paidAt        DateTime?
@@ -706,21 +703,21 @@ enum MenuType {
 }
 
 model MenuCategory {
-  id        String     @id @default(uuid())
+  id        String     @id @default(uuid()) @map("_id")
   name      String
   sortOrder Int        @default(0)
   isActive  Boolean    @default(true)
-  isVeg     Boolean?   // null = both, true = veg only, false = non-veg only
+  isVeg     Boolean? // null = both, true = veg only, false = non-veg only
   items     MenuItem[]
 }
 
 model MenuItem {
-  id            String       @id @default(uuid())
+  id            String       @id @default(uuid()) @map("_id")
   categoryId    String
   category      MenuCategory @relation(fields: [categoryId], references: [id])
   name          String
   description   String?
-  pricePerPlate Decimal      @db.Decimal(10, 2)
+  pricePerPlate Float
   isVeg         Boolean      @default(true)
   imageUrl      String?
   menuType      MenuType     @default(BOTH)
@@ -732,13 +729,13 @@ model MenuItem {
 }
 
 model MenuPackage {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @map("_id")
   name          String
   description   String?
   packageType   String
   menuType      MenuType
   isVeg         Boolean  @default(true)
-  pricePerPlate Decimal  @db.Decimal(10, 2)
+  pricePerPlate Float
   itemIds       Json     @default("[]")
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -748,21 +745,21 @@ model MenuPackage {
 // ─── WEDDING PACKAGES MODULE ─────────────────────────────────────────────────
 
 model WeddingPackage {
-  id              String   @id @default(uuid())
-  propertyId      String
-  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  name            String
-  ceremonyType    String   // MEHENDI | HALDI | MARRIAGE | RECEPTION | COMPLETE
-  description     String?
-  guestCapacity   Int      @default(100)
-  durationDays    Int      @default(1)
-  startingPrice   Decimal  @db.Decimal(12, 2)
-  includedServices Json    @default("[]")
-  images          Json     @default("[]")
-  coverImageUrl   String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid()) @map("_id")
+  propertyId       String
+  property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name             String
+  ceremonyType     String // MEHENDI | HALDI | MARRIAGE | RECEPTION | COMPLETE
+  description      String?
+  guestCapacity    Int      @default(100)
+  durationDays     Int      @default(1)
+  startingPrice    Float
+  includedServices Json     @default("[]")
+  images           Json     @default("[]")
+  coverImageUrl    String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([propertyId])
   @@index([isActive])
@@ -770,13 +767,13 @@ model WeddingPackage {
 }
 
 model PhotographyService {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @map("_id")
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   name        String
-  serviceType String   // PRE_WEDDING | WEDDING | CINEMATIC | DRONE | ALBUM | CANDID | TRADITIONAL | COMPLETE
+  serviceType String // PRE_WEDDING | WEDDING | CINEMATIC | DRONE | ALBUM | CANDID | TRADITIONAL | COMPLETE
   description String?
-  price       Decimal  @db.Decimal(12, 2)
+  price       Float
   images      Json     @default("[]")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -786,14 +783,14 @@ model PhotographyService {
 }
 
 model BookingMenuSelection {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @map("_id")
   bookingId     String?
   roomBookingId String?
   packageId     String?
   selectedItems Json     @default("[]")
   guestCount    Int
   isVeg         Boolean  @default(true)
-  totalCost     Decimal  @db.Decimal(10, 2)
+  totalCost     Float
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

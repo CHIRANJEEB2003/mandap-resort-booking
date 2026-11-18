@@ -25,11 +25,13 @@ async function main() {
     { name: 'Security Team', category: 'SECURITY_TEAM', isSystem: true },
   ];
 
-  for (const rt of resourceTypes) {
+  // Fixed ids ("1".."7") keep this idempotent now that ids are strings (MongoDB)
+  for (const [i, rt] of resourceTypes.entries()) {
+    const id = String(i + 1);
     await prisma.resourceType.upsert({
-      where: { id: resourceTypes.indexOf(rt) + 1 },
+      where: { id },
       update: {},
-      create: rt,
+      create: { id, ...rt },
     });
   }
 

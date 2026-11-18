@@ -1,6 +1,7 @@
 const { prisma } = require('../utils/prisma');
 const { createError } = require('../middleware/errorHandler');
 const { audit } = require('../utils/audit');
+const { toDateOnly } = require('../utils/date');
 
 exports.createBooking = async (req, res) => {
   const { propertyId, hallId, eventDate, eventType, guestCount, services = [], notes } = req.body;
@@ -19,7 +20,7 @@ exports.createBooking = async (req, res) => {
     where: {
       propertyId,
       hallId: hallId || null,
-      eventDate: new Date(eventDate),
+      eventDate: toDateOnly(eventDate),
       status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] },
     },
   });
@@ -37,7 +38,7 @@ exports.createBooking = async (req, res) => {
       propertyId,
       hallId: hallId || null,
       customerId: customer.id,
-      eventDate: new Date(eventDate),
+      eventDate: toDateOnly(eventDate),
       eventType,
       guestCount,
       notes,
@@ -47,7 +48,8 @@ exports.createBooking = async (req, res) => {
       totalAmount,
       advanceAmount,
       status: 'ENQUIRY',
-      services: { createMany: { data: services } },
+      // MongoDB rejects an empty insertMany, so only nest when there are services
+      ...(services.length ? { services: { createMany: { data: services } } } : {}),
     },
     include: { services: true, property: { select: { name: true } } },
   });

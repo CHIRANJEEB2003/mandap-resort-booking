@@ -1,28 +1,37 @@
 version: '3.9'
 
 services:
-  postgres:
-    image: postgres:16-alpine
+  # MongoDB as a single-node replica set (Prisma needs one for transactions).
+  # The healthcheck initiates the replica set on first start.
+  mongo:
+    image: mongo:7
     container_name: mandap_db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: mandap_booking
-      POSTGRES_USER: mandap
-      POSTGRES_PASSWORD: mandap_pass
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mongo_data:/data/db
+    healthcheck:
+      test: >-
+        mongosh --quiet --eval "try { rs.status().ok } catch (e) {
+        rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok }"
+      interval: 5s
+      timeout: 10s
+      retries: 20
 
   backend:
     build: ./backend
     container_name: mandap_backend
     restart: unless-stopped
     env_file: ./backend/.env
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/mandap_booking?replicaSet=rs0
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      mongo:
+        condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -37,4 +46,4 @@ services:
       - backend
 
 volumes:
-  postgres_data:
+  mongo_data:

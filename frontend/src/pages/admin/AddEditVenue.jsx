@@ -330,7 +330,7 @@ export default function AddEditVenue() {
     }
     mutation.mutate({
       ...form,
-      locationNodeId: Number(form.locationNodeId),
+      locationNodeId: form.locationNodeId,
       totalCapacity: Number(form.totalCapacity),
       parkingCapacity: form.parkingCapacity ? Number(form.parkingCapacity) : undefined,
     });

@@ -21,7 +21,7 @@ export default function LocationManager() {
   });
 
   const addNode = useMutation({
-    mutationFn: () => api.post('/admin/locations/node', { ...nodeForm, stateId: Number(nodeForm.stateId), parentId: nodeForm.parentId ? Number(nodeForm.parentId) : undefined, level: Number(nodeForm.level) }),
+    mutationFn: () => api.post('/admin/locations/node', { ...nodeForm, stateId: nodeForm.stateId, parentId: nodeForm.parentId || undefined, level: Number(nodeForm.level) }),
     onSuccess: () => { toast.success('Location node added'); qc.invalidateQueries(['admin-locations']); },
     onError: (err) => toast.error(err.response?.data?.message || 'Error'),
   });

@@ -8,7 +8,7 @@ exports.getStates = async (req, res) => {
 exports.getNodes = async (req, res) => {
   const { stateId, level } = req.query;
   const where = {};
-  if (stateId) where.stateId = Number(stateId);
+  if (stateId) where.stateId = String(stateId);
   if (level) where.level = Number(level);
   const nodes = await prisma.locationNode.findMany({ where, orderBy: { name: 'asc' } });
   res.json(nodes);
@@ -16,7 +16,7 @@ exports.getNodes = async (req, res) => {
 
 exports.getChildren = async (req, res) => {
   const children = await prisma.locationNode.findMany({
-    where: { parentId: Number(req.params.id) },
+    where: { parentId: req.params.id },
     orderBy: { name: 'asc' },
   });
   res.json(children);

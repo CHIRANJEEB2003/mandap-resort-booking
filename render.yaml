@@ -1,7 +1,7 @@
 # Render Blueprint — deploys the whole platform as one web service.
 # Express serves the API at /api and the built React app for every other path.
-# The Postgres database is external (e.g. Neon free tier): Render prompts for
-# DATABASE_URL when the Blueprint is created.
+# The database is MongoDB (e.g. MongoDB Atlas free M0 cluster, which is a replica
+# set as Prisma requires). Render prompts for DATABASE_URL when the Blueprint is created.
 # Deploy: Render Dashboard → New → Blueprint → select this repo.
 
 services:
@@ -13,17 +13,18 @@ services:
     buildCommand: >-
       cd frontend && npm ci --include=dev && npm run build &&
       cd ../backend && npm ci --include=dev && npx prisma generate
-    # Schema is synced with `db push` (the committed migration predates the schema).
-    # Both seed scripts are idempotent, so they are safe to run on every start.
+    # MongoDB has no migrations: `db push` creates collections + indexes, then
+    # ensure-indexes adds the partial unique email index. Seeds are idempotent.
     startCommand: >-
       cd backend && npx prisma db push --skip-generate &&
-      node prisma/seed.js && node seed-demo.js && node src/index.js
+      node prisma/ensure-indexes.js && node prisma/seed.js &&
+      node seed-demo.js && node src/index.js
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: NODE_ENV
         value: production
-      # Postgres connection string, e.g. from Neon (use the direct, non-pooled URL)
+      # MongoDB connection string, e.g. mongodb+srv://USER:PASS@cluster0.xxxx.mongodb.net/mandap_booking
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

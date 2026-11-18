@@ -14,7 +14,7 @@ exports.register = async (req, res) => {
 
   // Uniqueness checks
   const [byEmail, byPhone] = await Promise.all([
-    prisma.user.findUnique({ where: { email } }),
+    email ? prisma.user.findFirst({ where: { email } }) : null,
     prisma.user.findUnique({ where: { phone } }),
   ]);
   if (byEmail) throw createError('Email address is already registered', 409);

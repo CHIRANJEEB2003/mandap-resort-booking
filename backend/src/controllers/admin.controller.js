@@ -402,7 +402,7 @@ exports.registerOwner = async (req, res) => {
 
   const [byPhone, byEmail] = await Promise.all([
     prisma.user.findUnique({ where: { phone } }),
-    prisma.user.findUnique({ where: { email } }),
+    email ? prisma.user.findFirst({ where: { email } }) : null,
   ]);
   if (byPhone) throw createError('Phone number already registered', 409);
   if (byEmail) throw createError('Email address already registered', 409);
@@ -507,7 +507,7 @@ exports.createVenue = async (req, res) => {
       propertyType,
       addressLine,
       totalCapacity: Number(totalCapacity),
-      locationNodeId: Number(locationNodeId),
+      locationNodeId: String(locationNodeId),
       ownerId,
       hasAC: Boolean(hasAC),
       hasPool: Boolean(hasPool),
@@ -546,7 +546,7 @@ exports.updateVenue = async (req, res) => {
   if (propertyType !== undefined) data.propertyType = propertyType;
   if (addressLine !== undefined) data.addressLine = addressLine;
   if (totalCapacity !== undefined) data.totalCapacity = Number(totalCapacity);
-  if (locationNodeId !== undefined) data.locationNodeId = Number(locationNodeId);
+  if (locationNodeId !== undefined) data.locationNodeId = String(locationNodeId);
   if (ownerId !== undefined) data.ownerId = ownerId;
   if (hasAC !== undefined) data.hasAC = Boolean(hasAC);
   if (hasPool !== undefined) data.hasPool = Boolean(hasPool);

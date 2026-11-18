@@ -21,7 +21,7 @@ exports.listProperties = async (req, res) => {
   } = req.query;
 
   const where = { status: 'APPROVED' };
-  if (locationNodeId) where.locationNodeId = Number(locationNodeId);
+  if (locationNodeId) where.locationNodeId = String(locationNodeId);
   if (propertyType) where.propertyType = propertyType;
   if (hasAC === 'true') where.hasAC = true;
   if (hasPool === 'true') where.hasPool = true;
@@ -183,7 +183,8 @@ exports.uploadMedia = async (req, res) => {
     sortOrder: i,
   }));
 
-  await prisma.propertyMedia.createMany({ data: mediaItems });
+  // MongoDB rejects an empty insertMany
+  if (mediaItems.length) await prisma.propertyMedia.createMany({ data: mediaItems });
   res.json({ uploaded: mediaItems.length });
 };
 
