@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mandap & Resort Booking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:2rem;font-family:monospace;color:#b00;background:#fff">'
+          + '<h3 style="margin:0 0 .5rem">JS Error</h3>'
+          + '<b>' + msg + '</b><br><small>' + src + ':' + line + '</small>'
+          + '<pre style="margin-top:.5rem;white-space:pre-wrap;font-size:11px">' + (err && err.stack ? err.stack : '') + '</pre>'
+          + '</div>';
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:2rem;font-family:monospace;color:#b00;background:#fff">'
+          + '<h3 style="margin:0 0 .5rem">Unhandled Promise Rejection</h3>'
+          + '<pre style="white-space:pre-wrap;font-size:11px">' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)) + '</pre>'
+          + '</div>';
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,803 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  OWNER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+}
+
+enum OwnerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  INACTIVE
+}
+
+enum PropertyType {
+  MANDAP
+  MARRIAGE_HALL
+  RESORT
+  BANQUET_HALL
+  WEDDING_VENUE
+}
+
+enum BookingStatus {
+  ENQUIRY
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  REFUNDED
+  FAILED
+}
+
+enum ResourceCategory {
+  MANDAP_HALL
+  DECORATION_TEAM
+  FLOWER_DECORATION_TEAM
+  CLEANING_TEAM
+  CATERING_TEAM
+  MANAGEMENT_TEAM
+  SECURITY_TEAM
+  CUSTOM
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum PricingType {
+  FULL_DAY
+  HOURLY
+  SLOT
+}
+
+// ─── IDENTITY ────────────────────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(uuid())
+  email           String?    @unique
+  phone           String     @unique
+  passwordHash    String
+  role            UserRole
+  status          UserStatus @default(ACTIVE)
+  fcmToken        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  customerProfile CustomerProfile?
+  ownerProfile    OwnerProfile?
+  adminProfile    AdminProfile?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@index([phone])
+  @@index([email])
+}
+
+model CustomerProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  fullName    String
+  avatarUrl   String?
+  address     String?
+  city        String?
+  state       String?
+  pinCode     String?
+  preferences Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings    Booking[]
+  reviews     Review[]
+  roomBookings RoomBooking[]
+}
+
+model OwnerProfile {
+  id               String      @id @default(uuid())
+  userId           String      @unique
+  user             User        @relation(fields: [userId], references: [id])
+  businessName     String
+  fullName         String
+  avatarUrl        String?
+  address          String
+  ownerType        String      @default("GENERAL")
+  gstNumber        String?
+  panNumber        String?
+  bankAccount      Json?
+  verificationStatus OwnerStatus @default(PENDING)
+  verifiedAt       DateTime?
+  verifiedById     String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  documents        OwnerDocument[]
+  properties       Property[]
+  staff            StaffMember[]
+}
+
+model OwnerDocument {
+  id          String   @id @default(uuid())
+  ownerId     String
+  owner       OwnerProfile @relation(fields: [ownerId], references: [id])
+  docType     String
+  fileUrl     String
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AdminProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  fullName    String
+  permissions Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── LOCATION ────────────────────────────────────────────────────────────────
+
+model State {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  code      String   @unique
+  nodes     LocationNode[]
+}
+
+model LocationNode {
+  id        Int          @id @default(autoincrement())
+  stateId   Int
+  state     State        @relation(fields: [stateId], references: [id])
+  parentId  Int?
+  parent    LocationNode? @relation("NodeTree", fields: [parentId], references: [id])
+  children  LocationNode[] @relation("NodeTree")
+  level     Int
+  name      String
+  slug      String
+  createdAt DateTime     @default(now())
+
+  localities  Locality[]
+  properties  Property[]
+
+  @@index([stateId, level])
+  @@index([parentId])
+}
+
+model Locality {
+  id         Int          @id @default(autoincrement())
+  nodeId     Int
+  node       LocationNode @relation(fields: [nodeId], references: [id])
+  name       String
+  pinCode    String
+  lat        Float?
+  lng        Float?
+
+  properties Property[]
+
+  @@index([pinCode])
+}
+
+// ─── PROPERTY ────────────────────────────────────────────────────────────────
+
+model Property {
+  id              String         @id @default(uuid())
+  ownerId         String
+  owner           OwnerProfile   @relation(fields: [ownerId], references: [id])
+  locationNodeId  Int
+  locationNode    LocationNode   @relation(fields: [locationNodeId], references: [id])
+  localityId      Int?
+  locality        Locality?      @relation(fields: [localityId], references: [id])
+  name            String
+  slug            String         @unique
+  description     String
+  propertyType    PropertyType
+  addressLine     String
+  lat             Float?
+  lng             Float?
+  totalCapacity   Int
+  parkingCapacity Int?
+  hasAC           Boolean        @default(false)
+  hasPool         Boolean        @default(false)
+  hasRooms        Boolean        @default(false)
+  outdoorArea     Boolean        @default(false)
+  status          PropertyStatus @default(DRAFT)
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedById    String?
+  termsConditions String?
+  rating          Float?
+  reviewCount     Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  halls              Hall[]
+  media              PropertyMedia[]
+  pricingRules       PricingRule[]
+  resources          PropertyResource[]
+  bookings           Booking[]
+  reviews            Review[]
+  amenities          PropertyAmenity[]
+  eventTypes         PropertyEventType[]
+  cateringPackages   CateringPackage[]
+  decorationPackages DecorationPackage[]
+  rooms              Room[]
+  weddingPackages    WeddingPackage[]
+  photographyServices PhotographyService[]
+
+  @@index([locationNodeId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([propertyType])
+}
+
+model Hall {
+  id            String   @id @default(uuid())
+  propertyId    String
+  property      Property @relation(fields: [propertyId], references: [id])
+  name          String
+  capacity      Int
+  area          Float?
+  hasAC         Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings      Booking[]
+}
+
+model PropertyMedia {
+  id          String    @id @default(uuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id])
+  mediaType   MediaType
+  url         String
+  thumbUrl    String?
+  isCover     Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  category    String    @default("GENERAL")
+  altText     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([propertyId])
+  @@index([propertyId, category])
+}
+
+model PricingRule {
+  id            String      @id @default(uuid())
+  propertyId    String
+  property      Property    @relation(fields: [propertyId], references: [id])
+  hallId        String?
+  pricingType   PricingType
+  basePrice     Decimal
+  weekendPrice  Decimal?
+  seasonalPrice Decimal?
+  advancePercent Int        @default(30)
+  isActive      Boolean     @default(true)
+  conditions    Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model PropertyAmenity {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  name        String
+  icon        String?
+}
+
+model PropertyEventType {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  eventType   String
+}
+
+// ─── RESOURCES ────────────────────────────────────────────────────────────────
+
+model ResourceType {
+  id          Int              @id @default(autoincrement())
+  name        String
+  category    ResourceCategory
+  isSystem    Boolean          @default(false)
+
+  propertyResources PropertyResource[]
+}
+
+model PropertyResource {
+  id              String       @id @default(uuid())
+  propertyId      String
+  property        Property     @relation(fields: [propertyId], references: [id])
+  resourceTypeId  Int
+  resourceType    ResourceType @relation(fields: [resourceTypeId], references: [id])
+  totalQty        Int
+  maintenanceQty  Int          @default(0)
+  pricePerUnit    Decimal?
+  isActive        Boolean      @default(true)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  allocations     ResourceAllocation[]
+}
+
+model BookingHold {
+  id          String   @id @default(uuid())
+  propertyId  String
+  hallId      String?
+  eventDate   DateTime @db.Date
+  expiresAt   DateTime
+  sessionId   String
+  createdAt   DateTime @default(now())
+
+  @@index([propertyId, eventDate])
+  @@index([expiresAt])
+}
+
+model ResourceAllocation {
+  id                 String           @id @default(uuid())
+  bookingId          String
+  booking            Booking          @relation(fields: [bookingId], references: [id])
+  propertyResourceId String
+  propertyResource   PropertyResource @relation(fields: [propertyResourceId], references: [id])
+  quantity           Int
+  allocatedAt        DateTime         @default(now())
+  releasedAt         DateTime?
+}
+
+// ─── BOOKINGS & FINANCE ───────────────────────────────────────────────────────
+
+model Booking {
+  id               String        @id @default(uuid())
+  propertyId       String
+  property         Property      @relation(fields: [propertyId], references: [id])
+  hallId           String?
+  hall             Hall?         @relation(fields: [hallId], references: [id])
+  customerId       String
+  customer         CustomerProfile @relation(fields: [customerId], references: [id])
+  eventDate        DateTime      @db.Date
+  startTime        DateTime?
+  endTime          DateTime?
+  eventType        String
+  guestCount       Int
+  status           BookingStatus @default(ENQUIRY)
+  baseAmount       Decimal
+  servicesAmount   Decimal       @default(0)
+  taxAmount        Decimal       @default(0)
+  totalAmount      Decimal
+  advanceAmount    Decimal
+  notes            String?
+  ownerNotes       String?
+  cancelledAt      DateTime?
+  cancelReason     String?
+  refundAmount     Decimal?
+  ownerRetentionAmount Decimal?
+  confirmedAt      DateTime?
+  hiddenFromHistory Boolean      @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  services         BookingService[]
+  payments         Payment[]
+  allocations      ResourceAllocation[]
+  review           Review?
+  cateringSelections   BookingCateringSelection[]
+  decorationSelections BookingDecorationSelection[]
+
+  @@index([propertyId, eventDate])
+  @@index([customerId])
+  @@index([status])
+}
+
+model BookingService {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  serviceName String
+  quantity    Int      @default(1)
+  unitPrice   Decimal
+  totalPrice  Decimal
+}
+
+model CancellationPolicy {
+  id              String   @id @default(uuid())
+  propertyId      String   @unique
+  daysBeforeEvent Int
+  refundPercent   Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  amount          Decimal
+  currency        String        @default("INR")
+  status          PaymentStatus @default(PENDING)
+  isAdvance       Boolean       @default(false)
+  receipt         String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  commission      Commission?
+
+  @@index([bookingId])
+}
+
+model Commission {
+  id          String   @id @default(uuid())
+  paymentId   String   @unique
+  payment     Payment  @relation(fields: [paymentId], references: [id])
+  ratePercent Decimal
+  amount      Decimal
+  settledAt   DateTime?
+  createdAt   DateTime @default(now())
+}
+
+// ─── PACKAGES ────────────────────────────────────────────────────────────────
+
+model CateringPackage {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  name        String
+  description String?
+  isVeg       Boolean  @default(true)
+  pricePerHead Decimal
+  minGuests   Int      @default(50)
+  items       Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookingSelections BookingCateringSelection[]
+
+  @@index([propertyId])
+}
+
+model DecorationPackage {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  name        String
+  serviceType String   @default("GENERAL")
+  description String?
+  price       Decimal
+  images      Json     @default("[]")
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookingSelections BookingDecorationSelection[]
+
+  @@index([propertyId])
+}
+
+model BookingCateringSelection {
+  id          String          @id @default(uuid())
+  bookingId   String
+  booking     Booking         @relation(fields: [bookingId], references: [id])
+  packageId   String
+  package     CateringPackage @relation(fields: [packageId], references: [id])
+  guestCount  Int
+  totalPrice  Decimal
+}
+
+model BookingDecorationSelection {
+  id          String            @id @default(uuid())
+  bookingId   String
+  booking     Booking           @relation(fields: [bookingId], references: [id])
+  packageId   String
+  package     DecorationPackage @relation(fields: [packageId], references: [id])
+  totalPrice  Decimal
+}
+
+// ─── STAFF ────────────────────────────────────────────────────────────────────
+
+model StaffMember {
+  id          String       @id @default(uuid())
+  ownerId     String
+  owner       OwnerProfile @relation(fields: [ownerId], references: [id])
+  fullName    String
+  phone       String
+  role        String
+  isActive    Boolean      @default(true)
+  schedule    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// ─── REVIEWS ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id          String          @id @default(uuid())
+  propertyId  String
+  property    Property        @relation(fields: [propertyId], references: [id])
+  customerId  String
+  customer    CustomerProfile @relation(fields: [customerId], references: [id])
+  bookingId   String          @unique
+  booking     Booking         @relation(fields: [bookingId], references: [id])
+  rating      Int
+  comment     String?
+  isPublished Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+
+  @@index([propertyId])
+}
+
+// ─── PLATFORM ─────────────────────────────────────────────────────────────────
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  body        String
+  type        String
+  referenceId String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model PlatformConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       Json
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── ROOM BOOKING ────────────────────────────────────────────────────────────
+
+enum RoomCategory {
+  STANDARD
+  DELUXE
+  LUXURY
+}
+
+enum RoomBookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Room {
+  id            String       @id @default(uuid())
+  propertyId    String
+  property      Property     @relation(fields: [propertyId], references: [id])
+  category      RoomCategory
+  name          String
+  description   String?
+  pricePerNight Decimal
+  totalRooms    Int
+  maxGuests     Int          @default(2)
+  facilities    Json?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  media         RoomMedia[]
+  bookings      RoomBooking[]
+
+  @@index([propertyId])
+}
+
+model RoomMedia {
+  id        String   @id @default(uuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+  url       String
+  isCover   Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model RoomBooking {
+  id            String            @id @default(uuid())
+  roomId        String
+  room          Room              @relation(fields: [roomId], references: [id])
+  customerId    String
+  customer      CustomerProfile   @relation(fields: [customerId], references: [id])
+  checkIn       DateTime          @db.Date
+  checkOut      DateTime          @db.Date
+  nights        Int
+  roomCount     Int
+  guestCount    Int
+  totalAmount   Decimal
+  taxAmount     Decimal           @default(0)
+  advanceAmount Decimal
+  status        RoomBookingStatus @default(PENDING)
+  notes         String?
+  cancelledAt   DateTime?
+  cancelReason  String?
+  confirmedAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  payments      RoomBookingPayment[]
+
+  @@index([roomId, checkIn, checkOut])
+  @@index([customerId])
+}
+
+model RoomBookingPayment {
+  id            String        @id @default(uuid())
+  roomBookingId String
+  roomBooking   RoomBooking   @relation(fields: [roomBookingId], references: [id])
+  amount        Decimal
+  status        PaymentStatus @default(PENDING)
+  isAdvance     Boolean       @default(false)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+}
+
+// ─── MENU MODULE ─────────────────────────────────────────────────────────────
+
+enum MenuType {
+  MANDAP
+  RESORT
+  BOTH
+}
+
+model MenuCategory {
+  id        String     @id @default(uuid())
+  name      String
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
+  isVeg     Boolean?   // null = both, true = veg only, false = non-veg only
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id            String       @id @default(uuid())
+  categoryId    String
+  category      MenuCategory @relation(fields: [categoryId], references: [id])
+  name          String
+  description   String?
+  pricePerPlate Decimal      @db.Decimal(10, 2)
+  isVeg         Boolean      @default(true)
+  imageUrl      String?
+  menuType      MenuType     @default(BOTH)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([categoryId])
+}
+
+model MenuPackage {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  packageType   String
+  menuType      MenuType
+  isVeg         Boolean  @default(true)
+  pricePerPlate Decimal  @db.Decimal(10, 2)
+  itemIds       Json     @default("[]")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── WEDDING PACKAGES MODULE ─────────────────────────────────────────────────
+
+model WeddingPackage {
+  id              String   @id @default(uuid())
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name            String
+  ceremonyType    String   // MEHENDI | HALDI | MARRIAGE | RECEPTION | COMPLETE
+  description     String?
+  guestCapacity   Int      @default(100)
+  durationDays    Int      @default(1)
+  startingPrice   Decimal  @db.Decimal(12, 2)
+  includedServices Json    @default("[]")
+  images          Json     @default("[]")
+  coverImageUrl   String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([isActive])
+  @@index([ceremonyType])
+}
+
+model PhotographyService {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name        String
+  serviceType String   // PRE_WEDDING | WEDDING | CINEMATIC | DRONE | ALBUM | CANDID | TRADITIONAL | COMPLETE
+  description String?
+  price       Decimal  @db.Decimal(12, 2)
+  images      Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([propertyId])
+}
+
+model BookingMenuSelection {
+  id            String   @id @default(uuid())
+  bookingId     String?
+  roomBookingId String?
+  packageId     String?
+  selectedItems Json     @default("[]")
+  guestCount    Int
+  isVeg         Boolean  @default(true)
+  totalCost     Decimal  @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([roomBookingId])
+}
