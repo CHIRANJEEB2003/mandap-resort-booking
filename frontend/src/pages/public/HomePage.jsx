@@ -15,6 +15,8 @@ const DARK = '#12330F';
 // ─── slide images ─────────────────────────────────────────────────────────────
 const HERO_SLIDES = [
   { url: '/images/mandap-floral-heart-chandelier.jpg', label: 'Floral Heart Chandelier Stage' },
+  { url: '/images/venue-lattice-entrance-gate.jpg',    label: 'Illuminated Lattice Entrance Gate' },
+  { url: '/images/mandap-lotus-floral-stage.jpg',      label: 'Lotus Floral Wedding Stage' },
   { url: '/images/mandap-classical-stage.png',      label: 'Classical Wedding Stage' },
   { url: '/images/mandap-pink-throne-outdoor.png',  label: 'Pink Throne Outdoor Mandap' },
   { url: '/images/mandap-golden-marigold.png',      label: 'Golden Marigold Mandap' },
