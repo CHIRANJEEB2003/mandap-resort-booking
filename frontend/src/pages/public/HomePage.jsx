@@ -892,7 +892,7 @@ function HomeSections() {
               Explore Venues →
             </Link>
             <Link to="/register" className="px-8 py-3 rounded-xl font-bold text-white border border-white/30 hover:bg-white/10 transition-all">
-              Register Free
+              Register
             </Link>
           </div>
         </div>
