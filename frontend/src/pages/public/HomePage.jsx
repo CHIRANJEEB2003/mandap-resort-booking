@@ -55,6 +55,93 @@ const CSS_ANIMS = `
     .hero-bg-img { animation: none !important; }
     .fade-anim { animation: none !important; opacity: 1 !important; }
   }
+
+  /* ── Why Choose Us: click animations ── */
+  .why-card { cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none; }
+  .why-card:focus-visible { box-shadow: 0 0 0 3px rgba(232,62,140,0.35); }
+  .why-icon { display: inline-block; transition: transform 300ms cubic-bezier(.34,1.56,.64,1); will-change: transform; }
+  .why-card:hover .why-icon { transform: scale(1.12) rotate(-4deg); }
+
+  /* card glows — 650ms, fade back to the resting card */
+  @keyframes whyScaleGlowGreen {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    35%  { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(34,197,94,0.32), 0 12px 38px rgba(34,197,94,0.5); border-color: rgba(34,197,94,0.55); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+  }
+  @keyframes whyGlowBlue {
+    0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    40%  { box-shadow: 0 0 0 4px rgba(59,130,246,0.16), 0 12px 34px rgba(59,130,246,0.32); }
+    100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+  }
+  @keyframes whyGlowGold {
+    0%   { border-color: rgb(243,244,246); box-shadow: 0 0 0 0 rgba(214,173,69,0); }
+    40%  { border-color: #D6AD45;          box-shadow: 0 0 0 3px rgba(214,173,69,0.35), 0 10px 32px rgba(214,173,69,0.35); }
+    100% { border-color: rgb(243,244,246); box-shadow: 0 0 0 0 rgba(214,173,69,0); }
+  }
+  @keyframes whyGlowPink {
+    0%   { box-shadow: 0 0 0 0 rgba(232,62,140,0); }
+    40%  { box-shadow: 0 0 0 4px rgba(232,62,140,0.15), 0 12px 34px rgba(232,62,140,0.32); }
+    100% { box-shadow: 0 0 0 0 rgba(232,62,140,0); }
+  }
+  .why-card.is-playing.why-verified { animation: whyScaleGlowGreen 650ms cubic-bezier(.22,1,.36,1); }
+  .why-card.is-playing.why-photos   { animation: whyGlowBlue 650ms ease-out; }
+  .why-card.is-playing.why-pricing  { animation: whyGlowGold 650ms ease-out; }
+  .why-card.is-playing.why-help     { animation: whyGlowPink 650ms ease-out; }
+
+  /* icon motions */
+  @keyframes whyIconBounce {
+    0%   { transform: scale(1) translateY(0); }
+    30%  { transform: scale(1.25) translateY(-10px); }
+    55%  { transform: scale(0.92) translateY(0); }
+    75%  { transform: scale(1.08) translateY(-3px); }
+    100% { transform: scale(1) translateY(0); }
+  }
+  @keyframes whyIconFlash {
+    0%   { transform: rotate(0deg) scale(1);     filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    25%  { transform: rotate(-12deg) scale(1.15); filter: brightness(1.9) drop-shadow(0 0 10px rgba(147,197,253,0.95)); }
+    55%  { transform: rotate(8deg) scale(1.05);   filter: brightness(1.2) drop-shadow(0 0 4px rgba(147,197,253,0.6)); }
+    100% { transform: rotate(0deg) scale(1);     filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); }
+  }
+  @keyframes whyIconSmallBounce {
+    0%   { transform: translateY(0) scale(1); }
+    35%  { transform: translateY(-7px) scale(1.12); }
+    65%  { transform: translateY(0) scale(0.96); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @keyframes whyIconPulse {
+    0%   { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(232,62,140,0)); }
+    30%  { transform: scale(1.22); filter: drop-shadow(0 0 8px rgba(232,62,140,0.7)); }
+    60%  { transform: scale(0.95); filter: drop-shadow(0 0 2px rgba(232,62,140,0.4)); }
+    100% { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(232,62,140,0)); }
+  }
+  .why-card.is-playing.why-verified .why-icon { animation: whyIconBounce 650ms cubic-bezier(.34,1.56,.64,1); }
+  .why-card.is-playing.why-photos   .why-icon { animation: whyIconFlash 600ms ease-out; }
+  .why-card.is-playing.why-pricing  .why-icon { animation: whyIconSmallBounce 500ms cubic-bezier(.34,1.56,.64,1); }
+  .why-card.is-playing.why-help     .why-icon { animation: whyIconPulse 600ms ease-in-out; }
+
+  /* ── "Start Planning Today" button: ripple + green glow ── */
+  .plan-btn { position: relative; overflow: hidden; cursor: pointer; border-radius: 9999px;
+    transition: background-color 300ms ease, transform 300ms ease; -webkit-tap-highlight-color: transparent; }
+  .plan-btn:hover { background-color: rgba(255,255,255,0.07); transform: translateY(-1px); }
+  .plan-btn:focus-visible { outline: 2px solid rgba(232,62,140,0.6); outline-offset: 3px; }
+  @keyframes planGlow {
+    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+    35%  { box-shadow: 0 0 0 4px rgba(74,222,128,0.35), 0 0 28px 6px rgba(74,222,128,0.55); }
+    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+  }
+  .plan-btn.is-glowing { animation: planGlow 700ms ease-out; }
+  @keyframes planRipple { from { transform: scale(0); opacity: 0.55; } to { transform: scale(1); opacity: 0; } }
+  .plan-ripple { position: absolute; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(134,239,172,0.85) 0%, rgba(74,222,128,0.35) 60%, transparent 70%);
+    animation: planRipple 600ms ease-out forwards; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .why-icon, .plan-btn { transition: none !important; }
+    .why-card:hover .why-icon { transform: none; }
+    .why-card.is-playing, .why-card.is-playing .why-icon,
+    .plan-btn.is-glowing, .plan-ripple { animation: none !important; }
+    .plan-ripple { display: none; }
+  }
 `;
 
 // ─── one-time splash loader ────────────────────────────────────────────────────
@@ -391,11 +478,78 @@ function PropertyCard({ p }) {
 
 
 const WHY_US = [
-  { icon: '✅', title: '100% Verified',      desc: 'Every venue is personally verified by our team' },
-  { icon: '📸', title: 'Real Photographs',   desc: 'Authentic photos so you know exactly what to expect' },
-  { icon: '💰', title: 'Transparent Pricing', desc: 'No hidden charges — all costs visible upfront' },
-  { icon: '🎯', title: 'Personalised Help',  desc: 'Dedicated relationship managers for your wedding' },
+  { icon: '✅', title: '100% Verified',      desc: 'Every venue is personally verified by our team',      variant: 'verified' },
+  { icon: '📸', title: 'Real Photographs',   desc: 'Authentic photos so you know exactly what to expect', variant: 'photos' },
+  { icon: '💰', title: 'Transparent Pricing', desc: 'No hidden charges — all costs visible upfront',       variant: 'pricing' },
+  { icon: '🎯', title: 'Personalised Help',  desc: 'Dedicated relationship managers for your wedding',    variant: 'help' },
 ];
+
+// Removing then re-adding the class on the next frame restarts a CSS animation,
+// so repeated (even rapid) clicks replay it every time.
+function useReplay() {
+  const [playing, setPlaying] = useState(false);
+  const frame = useRef(0);
+  const play = () => {
+    cancelAnimationFrame(frame.current);
+    setPlaying(false);
+    frame.current = requestAnimationFrame(() => requestAnimationFrame(() => setPlaying(true)));
+  };
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  return [playing, play, () => setPlaying(false)];
+}
+
+function WhyCard({ icon, title, desc, variant }) {
+  const [playing, play, stop] = useReplay();
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={title}
+      onClick={play}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } }}
+      onAnimationEnd={(e) => { if (e.target === e.currentTarget) stop(); }}
+      className={`why-card why-${variant} ${playing ? 'is-playing' : ''} bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
+    >
+      <span className="why-icon text-3xl">{icon}</span>
+      <h3 className="font-bold text-gray-900 mt-3 mb-2">{title}</h3>
+      <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+// "Start Planning Today": ripple from the tap point + green glow, then smooth-scroll
+// to the Wedding Services (planning) section.
+function PlanButton({ targetId, children }) {
+  const [glowing, glow, stopGlow] = useReplay();
+  const [ripples, setRipples] = useState([]);
+  const onClick = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2;
+    // keyboard clicks have no pointer position → ripple from the centre
+    const x = (e.clientX || r.left + r.width / 2) - r.left - size / 2;
+    const y = (e.clientY || r.top + r.height / 2) - r.top - size / 2;
+    const id = Date.now() + Math.random();
+    setRipples((rs) => [...rs, { id, x, y, size }]);
+    setTimeout(() => setRipples((rs) => rs.filter((rp) => rp.id !== id)), 650);
+    glow();
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById(targetId)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onAnimationEnd={(e) => { if (e.target === e.currentTarget) stopGlow(); }}
+      className={`plan-btn ${glowing ? 'is-glowing' : ''} inline-block px-4 py-1.5 mb-3 text-sm font-black uppercase tracking-widest`}
+      style={{ color: PINK }}
+    >
+      {ripples.map((rp) => (
+        <span key={rp.id} className="plan-ripple" style={{ left: rp.x, top: rp.y, width: rp.size, height: rp.size }} />
+      ))}
+      <span className="relative">{children}</span>
+    </button>
+  );
+}
 
 const MANDAP_PLACEHOLDERS = [
   { name: 'Shree Laxmi Mandap',   city: 'Bhubaneswar', type: 'MANDAP', price: 45000, emoji: '🏛️', bg: 'linear-gradient(135deg,#FFF0F7,#FEE2F2)', slug: 'search?type=MANDAP&city=Bhubaneswar' },
@@ -690,7 +844,7 @@ function HomeSections() {
       )}
 
       {/* ── Wedding Services ── */}
-      <section className="py-12 bg-white">
+      <section id="wedding-planning" className="py-12 bg-white" style={{ scrollMarginTop: 72 }}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <SectionHead title="Wedding Services" sub="Hire the best professionals for your perfect wedding" link="/wedding-services" linkLabel="Browse All" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -863,13 +1017,7 @@ function HomeSections() {
       <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10">
         <SectionHead title="Why Choose Us" sub="Trusted by thousands of couples across Odisha" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {WHY_US.map(({ icon, title, desc }) => (
-            <div key={title} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <span className="text-3xl">{icon}</span>
-              <h3 className="font-bold text-gray-900 mt-3 mb-2">{title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-            </div>
-          ))}
+          {WHY_US.map((item) => <WhyCard key={item.title} {...item} />)}
         </div>
       </section>
 
@@ -881,7 +1029,7 @@ function HomeSections() {
           <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(214,173,69,0.4)', bottom:-50, left:-30 }} />
         </div>
         <div className="relative max-w-[1400px] mx-auto px-6 py-12 text-center">
-          <p className="text-sm font-black uppercase tracking-widest mb-3" style={{ color: PINK }}>Start Planning Today</p>
+          <PlanButton targetId="wedding-planning">Start Planning Today</PlanButton>
           <h2 className="text-2xl sm:text-4xl font-display font-bold text-white mb-4">Your Perfect Wedding Venue Awaits</h2>
           <p className="text-white/60 max-w-xl mx-auto mb-8 text-sm">
             Browse 500+ verified mandaps and resorts across Odisha. Book with confidence — transparent pricing, real photos.
